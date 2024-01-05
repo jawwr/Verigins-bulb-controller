@@ -6,6 +6,6 @@
 
     <fragment
         android:id="@+id/sampleFragment"
-        android:name="com.example.lesson1111.presentation.SampleFragment"
+        android:name="com.example.lesson1111.presentation.BulbFragment"
         android:label="SampleFragment" />
 </navigation>

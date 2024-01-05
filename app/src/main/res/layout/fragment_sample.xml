@@ -3,48 +3,48 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <!--    <androidx.recyclerview.widget.RecyclerView-->
-    <!--        android:id="@+id/categories_recycler_view"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="match_parent"-->
-    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"-->
-    <!--        app:layout_constraintTop_toTopOf="parent" />-->
+    android:layout_height="match_parent"
+    android:layout_marginVertical="30dp">
 
     <TextView
         android:id="@+id/bulb_state"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginVertical="20dp"
         android:textAlignment="center"
         android:textSize="30sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="On" />
 
-    <Button
-        android:id="@+id/state_on"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:text="On"
-        android:textSize="50sp"
-        app:layout_constraintBottom_toTopOf="@id/state_off"
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/bulb_state_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="20dp"
+        android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/bulb_state" />
 
-    <Button
-        android:id="@+id/state_off"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:text="Off"
-        android:textSize="50sp"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <Spinner
+        android:id="@+id/bulb_color_list"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/state_on" />
+        app:layout_constraintTop_toBottomOf="@id/bulb_state_switch" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/brightness_slider"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:stepSize="10"
+        android:valueFrom="0"
+        android:valueTo="100"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bulb_color_list" />
 
     <ProgressBar
         android:id="@+id/progress_categories"
