@@ -2,11 +2,10 @@ package com.example.lesson1111.presentation
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.View
-import android.widget.Adapter
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -26,21 +25,11 @@ class BulbFragment : Fragment(R.layout.fragment_sample), AdapterView.OnItemSelec
 
     @Inject
     lateinit var viewModelFactory: ViewModelFactory
-    private val bulbStateViewModel: BulbStateViewModel by viewModels { viewModelFactory }
-    private val bulbColorViewModel: BulbColorViewModel by viewModels { viewModelFactory }
-    private val bulbBrightnessViewModel: BulbBrightnessViewModel by viewModels { viewModelFactory }
+    private val bulbViewModel: BulbViewModel by viewModels { viewModelFactory }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setup()
-    }
-
-    private fun changeBulbState(switch: SwitchCompat) {
-        if (switch.isChecked) {
-            bulbStateViewModel.turnBulbOn()
-        } else {
-            bulbStateViewModel.turnBulbOff()
-        }
     }
 
     override fun onAttach(context: Context) {
@@ -50,7 +39,7 @@ class BulbFragment : Fragment(R.layout.fragment_sample), AdapterView.OnItemSelec
 
     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         val color = binding.bulbColorList.selectedItem as String
-        bulbColorViewModel.setColor(color)
+        bulbViewModel.setColor(color)
     }
 
     override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -60,36 +49,43 @@ class BulbFragment : Fragment(R.layout.fragment_sample), AdapterView.OnItemSelec
     }
 
     override fun onStopTrackingTouch(slider: Slider) {
-        bulbBrightnessViewModel.setBrightness(slider.value.toInt())
+        bulbViewModel.setBrightness(slider.value.toInt())
     }
 
-    private fun setBulbColorList(uiState: UiState<List<BulbColor>>) {
-        if (uiState is UiState.Success) {
-            val list = uiState.value
-            binding.bulbColorList.adapter = ArrayAdapter(
-                requireContext(),
-                android.R.layout.simple_spinner_item,
-                list.map { it.color }
-            ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+    private fun changeBulbState(switch: SwitchCompat) {
+        if (switch.isChecked) {
+            bulbViewModel.turnBulbOn()
+        } else {
+            bulbViewModel.turnBulbOff()
+        }
+    }
+
+    private fun setBulbColorList(
+        uiState: UiState<List<BulbColor>>,
+        uiStateCurrentColor: UiState<String>
+    ) {
+        if (uiState is UiState.Success && uiStateCurrentColor is UiState.Success) {
+            val list = uiState.value.map { it.color }
+            val index = list.indexOf(uiStateCurrentColor.value)
+            val colorList = binding.bulbColorList
+            if (colorList.adapter == null) {
+                colorList.adapter = ArrayAdapter(
+                    requireContext(),
+                    android.R.layout.simple_spinner_item,
+                    list
+                ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+                colorList.setSelection(index)
+            }
         }
     }
 
     private fun showState(uiState: UiState<Boolean>) {
-        when (uiState) {
-            is UiState.Success -> {
-                val isOn = uiState.value
-                binding.bulbStateSwitch.isChecked = isOn
-                binding.bulbState.text = if (isOn) "On" else "Off"
-                binding.progressCategories.visibility = View.GONE
-            }
-
-            is UiState.Loading -> {
-                binding.progressCategories.visibility = View.VISIBLE
-            }
-
-            is UiState.Failure -> {
-                binding.progressCategories.visibility = View.GONE
-            }
+        if (uiState is UiState.Success) {
+            val isOn = uiState.value
+            binding.bulbStateSwitch.isChecked = isOn
+            binding.bulbState.text = if (isOn) "On" else "Off"
+        } else {
+            binding.bulbState.text = "Ошибка"
         }
     }
 
@@ -99,36 +95,38 @@ class BulbFragment : Fragment(R.layout.fragment_sample), AdapterView.OnItemSelec
         }
     }
 
+    private fun showBulb(uiState: UiState<BulbState>) {
+        when (uiState) {
+            is UiState.Success -> {
+                if (!uiState.value.isSuccess()) {
+                    return
+                }
+                val bulbState = uiState.value
+                setBulbColorList(bulbState.colors, bulbState.currentColor)
+                showState(bulbState.bulbState)
+                showBrightness(bulbState.brightness)
+
+                binding.progressCategories.visibility = View.GONE
+            }
+
+            is UiState.Loading -> {
+                binding.progressCategories.visibility = View.VISIBLE
+            }
+
+            is UiState.Failure -> {
+                Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Попробуйте включить лампочку", Toast.LENGTH_LONG).show()
+                binding.progressCategories.visibility = View.GONE
+            }
+        }
+    }
+
     private fun setup() {
-        setupBulbStates()
-        setupBulbColor()
-        setupSlider()
-    }
-
-    private fun setupSlider() {
-        binding.brightnessSlider.addOnSliderTouchListener(this)
-        bulbBrightnessViewModel.brightnesses.observe(viewLifecycleOwner) {
-            showBrightness(it)
+        bulbViewModel.bulbStates.observe(viewLifecycleOwner) {
+            showBulb(it)
         }
-        bulbBrightnessViewModel.getBrightness()
-    }
-
-    private fun setupBulbStates() {
-        bulbStateViewModel.bulbStates.observe(viewLifecycleOwner) {
-            showState(it)
-        }
-        bulbStateViewModel.getBulbState()
         binding.bulbStateSwitch.setOnClickListener { changeBulbState(it as SwitchCompat) }
-    }
-
-    private fun setupBulbColor() {
         binding.bulbColorList.onItemSelectedListener = this
-        binding.bulbColorList.isSelected = false
-
-        bulbColorViewModel.bulbColors.observe(viewLifecycleOwner) {
-            setBulbColorList(it)
-        }
-        bulbColorViewModel.getCurrentColor()
-        bulbColorViewModel.getColors()
+        binding.brightnessSlider.addOnSliderTouchListener(this)
     }
 }
